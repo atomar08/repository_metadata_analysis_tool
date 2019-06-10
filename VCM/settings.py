@@ -21,10 +21,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'ul^@u=--iketi2(n7(mu@)y9y9co*g!&!fhz02w=j_lf8#-4i&'
 
+# Development configuration
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
 ALLOWED_HOSTS = []
+
+# Production configuration
+# DEBUG = False
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 
@@ -121,5 +125,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+GIT_USER_ID = os.environ['GIT_USER_ID']
 GIT_ACCOUNT_ID = os.environ['GIT_ACCOUNT_ID']
 GIT_ACCOUNT_KEY = os.environ['GIT_ACCOUNT_KEY']
