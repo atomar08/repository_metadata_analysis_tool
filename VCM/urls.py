@@ -22,5 +22,6 @@ from git import views
 urlpatterns = [
     # path('student/', include('student.views')),
     path('admin/', admin.site.urls),
-    path('git_commits/', views.get_commits, name='get_commits')
+    path('git_commits/', views.get_commits, name='get_commits'),
+    path('validate_repository/', views.validate_repository, name='validate_repository'),
 ]

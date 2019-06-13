@@ -20,16 +20,33 @@ g = Github(GIT_ACCOUNT_ID, GIT_ACCOUNT_KEY)
 # r4 = g.get_repo("atomar08/cs537")  # 34 commits
 
 
-def validate_repo(request):
-    print("In validate repo")
-    return
+def validate_repository(request):
+    print("In validate repository")
+    repo_name = request.GET.get('repo_name')
+    if is_repo_valid(repo_name):
+        return HttpResponse("Repo is Valid")
+    else:
+        return HttpResponse("Repo is Invalid", status=412)
+
+
+def is_repo_valid(repo_name):
+    try:
+        g.get_repo("{}/{}".format(GIT_USER_ID, repo_name))
+    except Exception as e:
+        # please refer: GithubException.py/UnknownObjectException
+        # print("e: {}, type: {}, status: {}, message: {}".format(e, type(e), e.status, e.data.get('message')))
+        if e.status == 404 and e.data.get('message', '') == 'Not Found':
+            return False
+        else:
+            raise e
+    return True
 
 
 def get_commits(request):
-    repo = request.GET.get('repo')
-    print("received request to collect logs of {}".format(repo))
+    repo_name = request.GET.get('repo')
+    print("received request to collect logs of {}".format(repo_name))
 
-    collect_commits(repo)
+    collect_commits(repo_name)
 
     # get_all_commits(repo)
     print("Saved all commits")
@@ -102,7 +119,7 @@ def get_all_commits(repo_name):
     commit_date = ""
     commit_no = 0
     for commit_obj in commits.reversed:
-        commit_no +=    1
+        commit_no += 1
         commit_date = commit_obj.commit.committer.date  # type=datetime.datetime
         save_commit_metadata(commit_no, repo, commit_obj)
     return commit_no, commit_date
