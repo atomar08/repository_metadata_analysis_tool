@@ -8,8 +8,8 @@ class RepoMetadata(models.Model):
     # updated_at = models.DateTimeField(auto_now_add=False, auto_now=True)
     commit_no = models.IntegerField(null=False, default=1)
     repo_name = models.CharField(max_length=50, null=False)
-    commit_id = models.CharField(max_length=50, null=True)
     author_name = models.CharField(max_length=20, null=True)
+    commit_id = models.CharField(max_length=50, null=True)
     commit_date = models.DateTimeField(auto_now=False)
     commit_message = models.CharField(max_length=200, null=True)
     files = models.CharField(max_length=3000, null=True)
@@ -20,6 +20,13 @@ class RepoMetadata(models.Model):
 
     def __str__(self):
         return self.repo_name
+
+    # def serializable_value(self, field_name):
+    #     return self.__dict__
+
+    # def serialize(self):
+    #     return self.__dict__
+    #     # return obj.__dict__
 
 
 class Repo(models.Model):

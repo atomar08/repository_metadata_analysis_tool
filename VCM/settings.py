@@ -125,6 +125,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-GIT_USER_ID = os.environ['GIT_USER_ID']
+# GIT_USER_ID = os.environ['GIT_USER_ID']
 GIT_ACCOUNT_ID = os.environ['GIT_ACCOUNT_ID']
 GIT_ACCOUNT_KEY = os.environ['GIT_ACCOUNT_KEY']

@@ -14,14 +14,10 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-
-from git import views
-
+from django.urls import path, include
 
 urlpatterns = [
     # path('student/', include('student.views')),
     path('admin/', admin.site.urls),
-    path('git_commits/', views.get_commits, name='get_commits'),
-    path('validate_repository/', views.validate_repository, name='validate_repository'),
+    path('git/', include('git.urls')),
 ]
