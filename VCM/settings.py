@@ -58,7 +58,8 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'VCM.urls'
 
 CORS_ORIGIN_WHITELIST = (
-    'http://localhost:3001',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
 )
 
 TEMPLATES = [
@@ -125,6 +126,5 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# GIT_USER_ID = os.environ['GIT_USER_ID']
 GIT_ACCOUNT_ID = os.environ['GIT_ACCOUNT_ID']
 GIT_ACCOUNT_KEY = os.environ['GIT_ACCOUNT_KEY']
