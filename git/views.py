@@ -21,14 +21,75 @@ g = Github(GIT_ACCOUNT_ID, GIT_ACCOUNT_KEY)
 # r4 = g.get_repo("apache/spark")  # 24165 commits
 # r4 = g.get_repo("atomar08/cs537")  # 34 commits
 
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+
 # test method to test any new functionality
 def test(request):
     print("in git test method")
     repo_name = request.GET.get('repo_name')
     project_name = request.GET.get('project_name')
 
-    print("returning from git test")
-    return HttpResponse("git_test completed successfully. data ".format())
+    # DEV
+    # Pagination doc:
+    # https://simpleisbetterthancomplex.com/tutorial/2016/08/03/how-to-paginate-with-django.html
+    # Efficiency: https://stackoverflow.com/questions/16161727/efficient-pagination-and-database-querying-in-django
+
+    page = request.GET.get('page', 1)
+    repo_metadata_content = RepoMetadata.objects.filter(project_name=project_name, repo_name=repo_name).order_by('commit_no')
+    metadata_paginator = Paginator(repo_metadata_content, 10)
+    try:
+        metadata_page = metadata_paginator.page(page)
+    except PageNotAnInteger:
+        data_pages = metadata_paginator.page(1)
+    except EmptyPage:
+        data_pages = metadata_paginator.page(metadata_paginator.num_pages)
+
+    print("Total no of records: ", metadata_paginator.count)
+    print("Total no of pages: ", metadata_paginator.num_pages)
+    print("Next page number: ", metadata_page.has_next(), metadata_page.next_page_number())
+    print("Previous page number: ", metadata_page.has_previous(), metadata_page.previous_page_number())
+    print("Page start index: ", metadata_page.start_index())  # Exception: InvalidPage
+    print("Page end index: ", metadata_page.end_index())  # Exception: InvalidPage
+
+    metadata_rows = json.loads(serializers.serialize('json', metadata_page,
+                                                     fields=(
+                                                         'commit_no',
+                                                         'project_name',
+                                                         'repo_name',
+                                                         'commit_id',
+                                                         'author_name',
+                                                         'commit_date',
+                                                         'commit_message',
+                                                         'files')))
+    # print("response type 1: {}, {}, {}".format(type(metadata_rows), metadata_rows[0], metadata_rows[-1]['fields']))
+    metadata_list = []
+    for commit in metadata_rows:
+        metadata_list.append(commit.get('fields', {}))
+
+    response_data = dict()
+    response_data['metadata'] = metadata_list
+    response_data['project_name'] = project_name
+    response_data['repo_name'] = repo_name
+    response_data['number_commits'] = len(metadata_list)
+    print("created response, sending back")
+
+    # Exc-1: upper index out of bound:
+    # raise EmptyPage(_('That page contains no results'))
+    # django.core.paginator.EmptyPage
+    # Exc-2: Lower index:
+    # raise EmptyPage(_('That page number is less than 1'))
+    # django.core.paginator.EmptyPage: That page number is less than 1
+    # Exc-3: Illegal page number like string:
+    # raise PageNotAnInteger(_('That page number is not an integer'))
+    # django.core.paginator.PageNotAnInteger: That page number is not an integer
+    return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
+
+    # print("in read_repo_metadata, response {}".format(metadata_list))
+    # print("successfully completed read_repo_metadata()")
+    # dev
+    # print("returning from git test")
+    # return HttpResponse("git_test completed successfully. data ".format(), status=200)
 
 
 def validate_repository(request):
@@ -50,14 +111,14 @@ def get_commits(request):
         return HttpResponse("Invalid repository", status=412)
 
     collect_commits(project_name, repo_name)
-    repo_metadata_dic = read_repo_metadata(project_name, repo_name)
+    repo_metadata_list = read_repo_metadata(project_name, repo_name)
 
     # print("Saved all commits, going to return type {}, {}".format(type(repo_metadata), repo_metadata))
     response_data = dict()
-    response_data['metadata'] = repo_metadata_dic
+    response_data['metadata'] = repo_metadata_list
     response_data['project_name'] = project_name
     response_data['repo_name'] = repo_name
-    response_data['number_commits'] = len(repo_metadata_dic)
+    response_data['number_commits'] = len(repo_metadata_list)
     print("created response, sending back")
     return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
 
