@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core import serializers
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import HttpResponse
 from github import Github
 
@@ -16,12 +17,11 @@ GIT_ACCOUNT_KEY = settings.GIT_ACCOUNT_KEY
 # g = Github("git user id", "git account pkey")
 g = Github(GIT_ACCOUNT_ID, GIT_ACCOUNT_KEY)
 
+NUMBER_OF_RECORDS_PER_PAGE = 10
 
 # r4 = g.get_repo("notepad-plus-plus/notepad-plus-plus")  # 2998
 # r4 = g.get_repo("apache/spark")  # 24165 commits
 # r4 = g.get_repo("atomar08/cs537")  # 34 commits
-
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
 # test method to test any new functionality
@@ -47,8 +47,12 @@ def test(request):
 
     print("Total no of records: ", metadata_paginator.count)
     print("Total no of pages: ", metadata_paginator.num_pages)
-    print("Next page number: ", metadata_page.has_next(), metadata_page.next_page_number())
-    print("Previous page number: ", metadata_page.has_previous(), metadata_page.previous_page_number())
+    print("has next page: ", metadata_page.has_next())
+    if metadata_page.has_next():
+        print("Next page number:", metadata_page.next_page_number())
+    print("has previous page: ", metadata_page.has_previous())
+    if metadata_page.has_previous():
+        print("Previous page number: ", metadata_page.previous_page_number())
     print("Page start index: ", metadata_page.start_index())  # Exception: InvalidPage
     print("Page end index: ", metadata_page.end_index())  # Exception: InvalidPage
 
@@ -99,16 +103,24 @@ def validate_repository(request):
     if is_repo_valid(project_name, repo_name):
         return HttpResponse("Valid repository")
     else:
-        return HttpResponse("Invalid repository", status=412)
+        return HttpResponse("Invalid repository", status=404)
 
 
 def get_commits(request):
+    """
+    Http method to collect all commits from git-hub server, save locally and then return all commits
+    :param request:
+        project_name
+        repo_name
+    :return:
+        http_response
+    """
     project_name = request.GET.get('project_name')
     repo_name = request.GET.get('repo_name')
     print("received request to collect logs of {} repo under {} project".format(repo_name, project_name))
 
     if not is_repo_valid(project_name, repo_name):
-        return HttpResponse("Invalid repository", status=412)
+        return HttpResponse("Invalid repository", status=404)
 
     collect_commits(project_name, repo_name)
     repo_metadata_list = read_repo_metadata(project_name, repo_name)
@@ -121,6 +133,56 @@ def get_commits(request):
     response_data['number_commits'] = len(repo_metadata_list)
     print("created response, sending back")
     return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
+
+
+def get_commits_page(request):
+    """
+    Http method to collect all commits from git-hub server, save locally and then return first commits page
+    :param request:
+        project_name
+        repo_name
+        page_number
+        records_per_page
+    :return:
+    """
+    project_name = request.GET.get('project_name')
+    repo_name = request.GET.get('repo_name')
+    page_name = request.GET.get('page_number')
+    records_per_page = request.GET.get('records_per_page', NUMBER_OF_RECORDS_PER_PAGE)
+    print("received request to collect logs of {} repo under {} project".format(repo_name, project_name))
+
+    if not is_repo_valid(project_name, repo_name):
+        return HttpResponse("Invalid repository", status=404)
+
+    collect_commits(project_name, repo_name)
+    return read_repo_metadata_page(project_name, repo_name, page_name, records_per_page)
+
+
+def read_commits_page(request):
+    """
+    Http method to get repository commits (page-wise) present locally
+    :param request:
+        project_name
+        repo_name
+        page_number
+        records_per_page
+    :return:
+    """
+    project_name = request.GET.get('project_name')
+    repo_name = request.GET.get('repo_name')
+    page_number = request.GET.get('page_number', 1)
+    records_per_page = request.GET.get('records_per_page', NUMBER_OF_RECORDS_PER_PAGE)
+    print("received request to collect logs from project {}, repo {}, page number: {}, records/page: {}".format(
+        project_name, repo_name, page_number, records_per_page))
+
+    if not is_repo_valid(project_name, repo_name):
+        return HttpResponse("Invalid repository", status=404)
+
+    if not is_repo_information_present_locally(project_name, repo_name):
+        return HttpResponse("New repository, please pull metadata using /get_commits_page/",
+                            status=303)  # 303: See Other
+    # collect_commits(project_name, repo_name)
+    return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
 
 
 ####### Helper Methods #######
@@ -137,6 +199,73 @@ def is_repo_valid(project_name, repo_name):
         else:
             raise e
     return True
+
+
+def is_repo_information_present_locally(project_name, repo_name):
+    repo_metadata_content = RepoMetadata.objects.filter(project_name=project_name, repo_name=repo_name)
+    print("in is_repo_information_present_locally(): ", type(repo_metadata_content))
+    if repo_metadata_content.exists():
+        return True
+    return False
+
+
+def read_repo_metadata_page(project_name, repo_name, page_no=1, records_per_page=NUMBER_OF_RECORDS_PER_PAGE):
+    # DEV
+    # Pagination doc:
+    # https://simpleisbetterthancomplex.com/tutorial/2016/08/03/how-to-paginate-with-django.html
+    # Efficiency: https://stackoverflow.com/questions/16161727/efficient-pagination-and-database-querying-in-django
+
+    print("in read repo metadata page")
+    status_code = 200
+    response_message = "OK"
+    repo_metadata_content = RepoMetadata.objects.filter(project_name=project_name, repo_name=repo_name).order_by(
+        'commit_no')
+    metadata_paginator = Paginator(repo_metadata_content, records_per_page)
+    try:
+        print("In read_repo_metadata_page reading page number {}, records/page: {}".format(page_no, records_per_page))
+        metadata_page = metadata_paginator.page(page_no)
+    except PageNotAnInteger:
+        status_code = 205
+        response_message = "requested page number is not an integer, re-setting to page 1"
+        print("page number is not an integer, re-setting to page 1")
+        page_no = 1
+        metadata_page = metadata_paginator.page(page_no)
+    except EmptyPage:
+        status_code = 205
+        response_message = "requested page number is not valid, re-setting to page 1"
+        print("invalid page number, re-setting to page 1")
+        page_no = 1
+        # page_no = metadata_paginator.num_pages
+        metadata_page = metadata_paginator.page(page_no)
+
+    print("Total no of records: ", metadata_paginator.count)
+    print("Total no of pages: ", metadata_paginator.num_pages)
+    print("has next page: ", metadata_page.has_next())
+    if metadata_page.has_next():
+        print("Next page number:", metadata_page.next_page_number())
+    print("has previous page: ", metadata_page.has_previous())
+    if metadata_page.has_previous():
+        print("Previous page number: ", metadata_page.previous_page_number())
+    print("Page start index: ", metadata_page.start_index())  # Exception: InvalidPage
+    print("Page end index: ", metadata_page.end_index())  # Exception: InvalidPage
+
+    commits_list = serialize_commit_records(metadata_page)
+    response_data = dict()
+    response_data['project_name'] = project_name
+    response_data['repository_name'] = repo_name
+    response_data['metadata'] = commits_list
+    response_data['number_of_commits'] = len(commits_list)
+    response_data['commit_start_index'] = metadata_page.start_index()
+    response_data['commit_end_index'] = metadata_page.end_index()
+    response_data['current_page_number'] = page_no
+    response_data['total_number_of_pages'] = metadata_paginator.num_pages
+    response_data['total_number_of_commits'] = metadata_paginator.count
+    response_data['has_next_page'] = metadata_page.has_next()
+    response_data['has_previous_page'] = metadata_page.has_previous()
+    response_data['message'] = response_message
+    print("created response, sending back")
+
+    return HttpResponse(json.dumps(response_data), content_type='application/json', status=status_code)
 
 
 def read_repo_metadata(project_name, repo_name):
@@ -156,13 +285,13 @@ def read_repo_metadata(project_name, repo_name):
                                                          'commit_message',
                                                          'files')))
     # print("response type 1: {}, {}, {}".format(type(metadata_rows), metadata_rows[0], metadata_rows[-1]['fields']))
-    metadata_list = []
+    commits_list = []
     for commit in metadata_rows:
-        metadata_list.append(commit.get('fields', {}))
+        commits_list.append(commit.get('fields', {}))
 
     # print("in read_repo_metadata, response {}".format(metadata_list))
     print("successfully completed read_repo_metadata()")
-    return metadata_list
+    return commits_list
 
 
 def collect_commits(project_name, repo_name):
@@ -242,6 +371,24 @@ def get_all_commits(project_name, repo_name):
         commit_date = commit_obj.commit.committer.date  # type=datetime.datetime
         save_commit_metadata(commit_no, repo, commit_obj)
     return commit_no, commit_date
+
+
+def serialize_commit_records(commit_records):
+    commit_rows = json.loads(serializers.serialize('json', commit_records,
+                                                   fields=(
+                                                            'commit_no',
+                                                            'project_name',
+                                                            'repo_name',
+                                                            'commit_id',
+                                                            'author_name',
+                                                            'commit_date',
+                                                            'commit_message',
+                                                            'files')))
+    # print("response type 1: {}, {}, {}".format(type(metadata_rows), metadata_rows[0], metadata_rows[-1]['fields']))
+    commits_list = []
+    for commit in commit_rows:
+        commits_list.append(commit.get('fields', {}))
+    return commits_list
 
 
 def save_commit_metadata(commit_no, repo, commit_obj):
