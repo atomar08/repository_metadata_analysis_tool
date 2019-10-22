@@ -1,5 +1,6 @@
 # Models documentation:
 # https://docs.djangoproject.com/en/2.2/ref/models/fields/
+# https://www.django-rest-framework.org/api-guide/serializers/
 
 from __future__ import unicode_literals
 

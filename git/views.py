@@ -178,10 +178,10 @@ def read_commits_page(request):
     if not is_repo_valid(project_name, repo_name):
         return HttpResponse("Invalid repository", status=404)
 
-    if not is_repo_information_present_locally(project_name, repo_name):
-        return HttpResponse("New repository, please pull metadata using /get_commits_page/",
-                            status=303)  # 303: See Other
-    # collect_commits(project_name, repo_name)
+    # if not is_repo_information_present_locally(project_name, repo_name):
+    #     return HttpResponse("New repository, please pull metadata using /get_commits_page/",
+    #                         status=303)  # 303: See Other
+    collect_commits(project_name, repo_name)
     return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
 
 
@@ -225,13 +225,13 @@ def read_repo_metadata_page(project_name, repo_name, page_no=1, records_per_page
         print("In read_repo_metadata_page reading page number {}, records/page: {}".format(page_no, records_per_page))
         metadata_page = metadata_paginator.page(page_no)
     except PageNotAnInteger:
-        status_code = 205
+        status_code = 200
         response_message = "requested page number is not an integer, re-setting to page 1"
         print("page number is not an integer, re-setting to page 1")
         page_no = 1
         metadata_page = metadata_paginator.page(page_no)
     except EmptyPage:
-        status_code = 205
+        status_code = 200
         response_message = "requested page number is not valid, re-setting to page 1"
         print("invalid page number, re-setting to page 1")
         page_no = 1
@@ -408,6 +408,16 @@ def save_commit_metadata(commit_no, repo, commit_obj):
 
 
 def collect_commit_files(commit_obj):
+    '''
+    Helper method to return all modified files in passed git commit object.
+
+    Parameters:
+    commit_obj: Git Commit Object collected from git
+
+    Returns:
+    list: list of files modified in commit
+    '''
+
     file_list = []
     for file in commit_obj.files:
         file_list.append(file.filename)
