@@ -7,6 +7,7 @@ urlpatterns = [
     path('get_commits/', views.get_commits, name='get_commits'),
     path('get_commits_page/', views.get_commits_page, name='get_commits_page'),
     path('read_commits_page/', views.read_commits_page, name='read_commits_page'),
+    path('get_commits_id/', views.get_commits_id, name='get_commits_id'),
     path('test/', views.test, name='test'),
 ]
 

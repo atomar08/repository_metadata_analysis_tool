@@ -95,6 +95,17 @@ def test(request):
     # print("returning from git test")
     # return HttpResponse("git_test completed successfully. data ".format(), status=200)
 
+# def search(request):
+#     project_name = request.GET.get('project_name')
+#     repo_name = request.GET.get('repo_name')
+#     commit_id = request.GET.get('commit_id')
+#     print("received request to collect commit_id of {} repo under {} project".format(repo_name, project_name))
+
+  
+
+
+
+
 
 def validate_repository(request):
     print("In validate repository")
@@ -184,7 +195,16 @@ def read_commits_page(request):
     collect_commits(project_name, repo_name)
     return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
 
-
+def get_commits_id(request):
+    print("in read repo  page")
+    repo_name = request.GET.get('repo_name')
+    project_name = request.GET.get('project_name')
+    commit_id=request.GET.get('commit_id')
+    collect_data1 = collect_data(project_name, repo_name,commit_id)
+    print("received cid", type(collect_data1))
+    return  collect_data1 
+    # return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
+    
 ####### Helper Methods #######
 
 
@@ -254,7 +274,7 @@ def read_repo_metadata_page(project_name, repo_name, page_no=1, records_per_page
     response_data['project_name'] = project_name
     response_data['repository_name'] = repo_name
     response_data['metadata'] = commits_list
-    response_data['number_of_commits'] = len(commits_list)
+    response_data['numbercd_of_commits'] = len(commits_list)
     response_data['commit_start_index'] = metadata_page.start_index()
     response_data['commit_end_index'] = metadata_page.end_index()
     response_data['current_page_number'] = page_no
@@ -390,7 +410,7 @@ def serialize_commit_records(commit_records):
         commits_list.append(commit.get('fields', {}))
     return commits_list
 
-
+ 
 def save_commit_metadata(commit_no, repo, commit_obj):
     data_obj = RepoMetadata(
         commit_no=commit_no,
@@ -422,3 +442,18 @@ def collect_commit_files(commit_obj):
     for file in commit_obj.files:
         file_list.append(file.filename)
     return file_list
+
+
+
+def collect_data(project_name, repo_name,commit_id):
+   status_code=200
+   repo_data= RepoMetadata.objects.filter(commit_id=commit_id)
+   commits_list = serialize_commit_records(repo_data)
+   response_data = dict()
+   response_data['project_name'] = project_name
+   response_data['repository_name'] = repo_name
+   response_data['metadata'] = commits_list
+   print("successfully completed read_data()")
+   return HttpResponse(json.dumps(response_data), content_type='application/json', status=status_code)
+
+   

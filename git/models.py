@@ -2,6 +2,9 @@
 # https://docs.djangoproject.com/en/2.2/ref/models/fields/
 # https://www.django-rest-framework.org/api-guide/serializers/
 
+# Django Queryset API reference doc:
+# https://docs.djangoproject.com/en/2.2/ref/models/querysets/
+
 from __future__ import unicode_literals
 
 from djongo import models
