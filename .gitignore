@@ -3,3 +3,4 @@ env.sh
 git/migrations/*
 *.idea
 *.vscode
+*.DS_Store
