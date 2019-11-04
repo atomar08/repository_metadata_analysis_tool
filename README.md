@@ -21,4 +21,12 @@ brew update
 brew install mongodb
 brew services start mongodb
 
+Celery Implementation:
+pip install Celery
+Install RabbitMQ
+
+Use Celery:
+source env.sh
+cd repository_metadata_analysis_tool
+celery -A VCM worker -l info
 

@@ -1,4 +1,7 @@
 import json
+import time
+
+from celery import shared_task
 from datetime import datetime
 from datetime import timedelta
 
@@ -18,11 +21,14 @@ GIT_ACCOUNT_KEY = settings.GIT_ACCOUNT_KEY
 g = Github(GIT_ACCOUNT_ID, GIT_ACCOUNT_KEY)
 
 NUMBER_OF_RECORDS_PER_PAGE = 10
+NEW_REPO_INITIAL_SLEEP_DURATION = 5
 
 # r4 = g.get_repo("notepad-plus-plus/notepad-plus-plus")  # 2998
 # r4 = g.get_repo("apache/spark")  # 24165 commits
 # r4 = g.get_repo("atomar08/cs537")  # 34 commits
 
+# Celery Implementation
+# https://docs.celeryproject.org/en/latest/django/first-steps-with-django.html#using-celery-with-django
 
 # test method to test any new functionality
 def test(request):
@@ -101,10 +107,6 @@ def test(request):
 #     commit_id = request.GET.get('commit_id')
 #     print("received request to collect commit_id of {} repo under {} project".format(repo_name, project_name))
 
-  
-
-
-
 
 
 def validate_repository(request):
@@ -148,7 +150,8 @@ def get_commits(request):
 
 def get_commits_page(request):
     """
-    Http method to collect all commits from git-hub server, save locally and then return first commits page
+    Http method to collect all commits from git-hub server, save locally and then return 
+    first commits page
     :param request:
         project_name
         repo_name
@@ -158,15 +161,21 @@ def get_commits_page(request):
     """
     project_name = request.GET.get('project_name')
     repo_name = request.GET.get('repo_name')
-    page_name = request.GET.get('page_number')
+    page_number = request.GET.get('page_number')
     records_per_page = request.GET.get('records_per_page', NUMBER_OF_RECORDS_PER_PAGE)
     print("received request to collect logs of {} repo under {} project".format(repo_name, project_name))
 
     if not is_repo_valid(project_name, repo_name):
         return HttpResponse("Invalid repository", status=404)
 
-    collect_commits(project_name, repo_name)
-    return read_repo_metadata_page(project_name, repo_name, page_name, records_per_page)
+    # collect_commits(project_name, repo_name) # original
+    collect_commits.delay(project_name, repo_name) # celery implementation
+    
+    repo_objects = Repo.objects.filter(project_name=project_name, repo_name=repo_name)
+    if not len(repo_objects):
+        time.sleep(NEW_REPO_INITIAL_SLEEP_DURATION)
+    
+    return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
 
 
 def read_commits_page(request):
@@ -195,6 +204,7 @@ def read_commits_page(request):
     collect_commits(project_name, repo_name)
     return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
 
+
 def get_commits_id(request):
     print("in read repo  page")
     repo_name = request.GET.get('repo_name')
@@ -204,7 +214,8 @@ def get_commits_id(request):
     print("received cid", type(collect_data1))
     return  collect_data1 
     # return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
-    
+
+
 ####### Helper Methods #######
 
 
@@ -313,8 +324,9 @@ def read_repo_metadata(project_name, repo_name):
     print("successfully completed read_repo_metadata()")
     return commits_list
 
-
+@shared_task
 def collect_commits(project_name, repo_name):
+    print("********* in collect commits *********")
     # method to get all commits, if we already have few commits pull only new commits
     # checking if repo information already exist or not, if not make an entry
     repo_objects = Repo.objects.filter(project_name=project_name, repo_name=repo_name)
@@ -358,6 +370,7 @@ def collect_commits(project_name, repo_name):
 
 
 def get_commits_since(project_name, repo_name, since, latest_commit_no):
+    print("****** get commits since ********")
     repo = g.get_repo("{}/{}".format(project_name, repo_name))
     commits = repo.get_commits(since=since).reversed
 
@@ -380,6 +393,7 @@ def get_commits_since(project_name, repo_name, since, latest_commit_no):
 
 
 def get_all_commits(project_name, repo_name):
+    print("*********** get all commits ********")
     repo = g.get_repo("{}/{}".format(project_name, repo_name))
     commits = repo.get_commits()
     print("Repo name: ", repo.name)
@@ -444,7 +458,6 @@ def collect_commit_files(commit_obj):
     return file_list
 
 
-
 def collect_data(project_name, repo_name,commit_id):
    status_code=200
    repo_data= RepoMetadata.objects.filter(commit_id=commit_id)
@@ -456,4 +469,3 @@ def collect_data(project_name, repo_name,commit_id):
    print("successfully completed read_data()")
    return HttpResponse(json.dumps(response_data), content_type='application/json', status=status_code)
 
-   
