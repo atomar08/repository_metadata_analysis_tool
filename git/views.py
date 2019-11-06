@@ -393,18 +393,22 @@ def get_commits_since(project_name, repo_name, since, latest_commit_no):
 
 
 def get_all_commits(project_name, repo_name):
-    print("*********** get all commits ********")
-    repo = g.get_repo("{}/{}".format(project_name, repo_name))
-    commits = repo.get_commits()
-    print("Repo name: ", repo.name)
-    print("Total number of commits: ", commits.totalCount)
-    commit_date = ""
-    commit_no = 0
-    for commit_obj in commits.reversed:
-        commit_no += 1
-        commit_date = commit_obj.commit.committer.date  # type=datetime.datetime
-        save_commit_metadata(commit_no, repo, commit_obj)
-    return commit_no, commit_date
+    try:
+        print("*********** get all commits ********")
+        repo = g.get_repo("{}/{}".format(project_name, repo_name))
+        commits = repo.get_commits()
+        print("Repo name: ", repo.name)
+        print("Total number of commits: ", commits.totalCount)
+        commit_date = ""
+        commit_no = 0
+        for commit_obj in commits.reversed:
+            commit_no += 1
+            commit_date = commit_obj.commit.committer.date  # type=datetime.datetime
+            save_commit_metadata(commit_no, repo, commit_obj)
+        return commit_no, commit_date
+    except Exception as e:
+        print("got exception. Error: {}".format(e))
+        return commit_no, commit_date
 
 
 def serialize_commit_records(commit_records):
