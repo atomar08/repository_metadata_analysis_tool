@@ -133,9 +133,6 @@ STATIC_URL = '/static/'
 GIT_ACCOUNT_ID = os.environ.get('GIT_ACCOUNT_ID', '')
 GIT_ACCOUNT_KEY = os.environ.get('GIT_ACCOUNT_KEY', '')
 
-# GIT_ACCOUNT_ID = os.environ.get('GIT_ACCOUNT_ID', 'anjali.tomar.jiwaji@gmail.com')
-# GIT_ACCOUNT_KEY = os.environ.get('GIT_ACCOUNT_KEY', 'milananju818')
-
 # Celery configuration:
 CELERY_BROKER_URL = 'amqp://localhost'
 # CELERY_BROKER_URL = 'amqp://guest:guest@localhost'
