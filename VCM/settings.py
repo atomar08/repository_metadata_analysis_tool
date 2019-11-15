@@ -126,9 +126,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# GIT_ACCOUNT_ID = os.environ['GIT_ACCOUNT_ID']
-# GIT_ACCOUNT_KEY = os.environ['GIT_ACCOUNT_KEY']
-
 # https://stackoverflow.com/questions/40915735/start-celery-worker-throws-no-attribute-worker-state-db
 GIT_ACCOUNT_ID = os.environ.get('GIT_ACCOUNT_ID', '')
 GIT_ACCOUNT_KEY = os.environ.get('GIT_ACCOUNT_KEY', '')

@@ -21,14 +21,12 @@ GIT_ACCOUNT_KEY = settings.GIT_ACCOUNT_KEY
 g = Github(GIT_ACCOUNT_ID, GIT_ACCOUNT_KEY)
 
 NUMBER_OF_RECORDS_PER_PAGE = 10
-NEW_REPO_INITIAL_SLEEP_DURATION = 5
+NEW_REPO_INITIAL_SLEEP_DURATION = 7
 
 # r4 = g.get_repo("notepad-plus-plus/notepad-plus-plus")  # 2998
 # r4 = g.get_repo("apache/spark")  # 24165 commits
 # r4 = g.get_repo("atomar08/cs537")  # 34 commits
 
-# Celery Implementation
-# https://docs.celeryproject.org/en/latest/django/first-steps-with-django.html#using-celery-with-django
 
 # test method to test any new functionality
 def test(request):
@@ -108,7 +106,6 @@ def test(request):
 #     print("received request to collect commit_id of {} repo under {} project".format(repo_name, project_name))
 
 
-
 def validate_repository(request):
     print("In validate repository")
     project_name = request.GET.get('project_name')
@@ -135,7 +132,8 @@ def get_commits(request):
     if not is_repo_valid(project_name, repo_name):
         return HttpResponse("Invalid repository", status=404)
 
-    collect_commits(project_name, repo_name)
+    collect_commits.delay(project_name, repo_name)
+    should_i_wait(project_name, repo_name)
     repo_metadata_list = read_repo_metadata(project_name, repo_name)
 
     # print("Saved all commits, going to return type {}, {}".format(type(repo_metadata), repo_metadata))
@@ -170,14 +168,10 @@ def get_commits_page(request):
 
     # collect_commits(project_name, repo_name) # original
     collect_commits.delay(project_name, repo_name) # celery implementation
-    
-    repo_objects = Repo.objects.filter(project_name=project_name, repo_name=repo_name)
-    if not len(repo_objects):
-        time.sleep(NEW_REPO_INITIAL_SLEEP_DURATION)
-    
+    should_i_wait(project_name, repo_name)
     return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
 
-
+    
 def read_commits_page(request):
     """
     Http method to get repository commits (page-wise) present locally
@@ -201,7 +195,8 @@ def read_commits_page(request):
     # if not is_repo_information_present_locally(project_name, repo_name):
     #     return HttpResponse("New repository, please pull metadata using /get_commits_page/",
     #                         status=303)  # 303: See Other
-    collect_commits(project_name, repo_name)
+    collect_commits.delay(project_name, repo_name)
+    should_i_wait(project_name, repo_name)
     return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
 
 
@@ -473,3 +468,8 @@ def collect_data(project_name, repo_name,commit_id):
    print("successfully completed read_data()")
    return HttpResponse(json.dumps(response_data), content_type='application/json', status=status_code)
 
+
+def should_i_wait(project_name, repo_name):
+    repo_objects = Repo.objects.filter(project_name=project_name, repo_name=repo_name)
+    if not len(repo_objects):
+        time.sleep(NEW_REPO_INITIAL_SLEEP_DURATION)
