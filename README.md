@@ -35,3 +35,12 @@ cd repository_metadata_analysis_tool
 
 celery -A VCM worker -l info
 
+Another terminal:
+
+source gitVenv/bin/activate
+
+cd repository_metadata_analysis_tool
+
+source env.sh
+
+python manage.py runserver 8001
