@@ -34,47 +34,35 @@ def test(request):
     repo_name = request.GET.get('repo_name')
     project_name = request.GET.get('project_name')
 
-    # DEV
-    # Pagination doc:
-    # https://simpleisbetterthancomplex.com/tutorial/2016/08/03/how-to-paginate-with-django.html
-    # Efficiency: https://stackoverflow.com/questions/16161727/efficient-pagination-and-database-querying-in-django
+    repo = g.get_repo("{}/{}".format(project_name, repo_name))
+    commits = repo.get_issues()
 
-    page = request.GET.get('page', 1)
-    repo_metadata_content = RepoMetadata.objects.filter(project_name=project_name, repo_name=repo_name).order_by('commit_no')
-    metadata_paginator = Paginator(repo_metadata_content, 10)
-    try:
-        metadata_page = metadata_paginator.page(page)
-    except PageNotAnInteger:
-        data_pages = metadata_paginator.page(1)
-    except EmptyPage:
-        data_pages = metadata_paginator.page(metadata_paginator.num_pages)
+    page_number = 0
+    total_commits = commits.totalCount
+    commit_date = ""
+    commit_no = 0
 
-    print("Total no of records: ", metadata_paginator.count)
-    print("Total no of pages: ", metadata_paginator.num_pages)
-    print("has next page: ", metadata_page.has_next())
-    if metadata_page.has_next():
-        print("Next page number:", metadata_page.next_page_number())
-    print("has previous page: ", metadata_page.has_previous())
-    if metadata_page.has_previous():
-        print("Previous page number: ", metadata_page.previous_page_number())
-    print("Page start index: ", metadata_page.start_index())  # Exception: InvalidPage
-    print("Page end index: ", metadata_page.end_index())  # Exception: InvalidPage
+    while total_commits > 0:
+        commits_page = commits.get_page(page_number)
+        for commit_obj in commits_page:
+            commit_no += 1
+            # print("commit_obj: {}, type: {}".format(commit_obj, type(commit_obj)))
+            # id = commit_obj.id
+            # title = commit_obj.title
+            # state = commit_obj.state
+            # number = commit_obj.number
+            # milestone = commit_obj.milestone
+            # body = commit_obj.body
+            # print("title: {}, {}, {}, {}, {}, {}".format(id, title, state, number, milestone, body))
+            # comments_count = commit_obj.comments 
+            # created_at = commit_obj.created_at
+            # user_login = getattr(getattr(commit_obj, 'user'), 'login', '')
+            # user_name = getattr(getattr(commit_obj, 'user'), 'name', '')
 
-    metadata_rows = json.loads(serializers.serialize('json', metadata_page,
-                                                     fields=(
-                                                         'commit_no',
-                                                         'project_name',
-                                                         'repo_name',
-                                                         'commit_id',
-                                                         'author_name',
-                                                         'commit_date',
-                                                         'commit_message',
-                                                         'files')))
-    # print("response type 1: {}, {}, {}".format(type(metadata_rows), metadata_rows[0], metadata_rows[-1]['fields']))
-    metadata_list = []
-    for commit in metadata_rows:
-        metadata_list.append(commit.get('fields', {}))
-
+            total_commits -= 1
+        page_number += 1
+    
+    metadata_list = [total_commits]
     response_data = dict()
     response_data['metadata'] = metadata_list
     response_data['project_name'] = project_name
@@ -82,15 +70,6 @@ def test(request):
     response_data['number_commits'] = len(metadata_list)
     print("created response, sending back")
 
-    # Exc-1: upper index out of bound:
-    # raise EmptyPage(_('That page contains no results'))
-    # django.core.paginator.EmptyPage
-    # Exc-2: Lower index:
-    # raise EmptyPage(_('That page number is less than 1'))
-    # django.core.paginator.EmptyPage: That page number is less than 1
-    # Exc-3: Illegal page number like string:
-    # raise PageNotAnInteger(_('That page number is not an integer'))
-    # django.core.paginator.PageNotAnInteger: That page number is not an integer
     return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
 
     # print("in read_repo_metadata, response {}".format(metadata_list))
@@ -171,7 +150,7 @@ def get_commits_page(request):
     should_i_wait(project_name, repo_name)
     return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
 
-    
+
 def read_commits_page(request):
     """
     Http method to get repository commits (page-wise) present locally
@@ -205,10 +184,73 @@ def get_commits_id(request):
     repo_name = request.GET.get('repo_name')
     project_name = request.GET.get('project_name')
     commit_id=request.GET.get('commit_id')
-    collect_data1 = collect_data(project_name, repo_name,commit_id)
+    collect_data1 = collect_data(project_name, repo_name, commit_id)
     print("received cid", type(collect_data1))
     return  collect_data1 
     # return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
+
+
+def get_repo_issues(request):
+    print("in get_repo_issues method")
+    repo_name = request.GET.get('repo_name')
+    project_name = request.GET.get('project_name')
+
+    repo = g.get_repo("{}/{}".format(project_name, repo_name))
+    repo_issues = repo.get_issues().reversed
+
+    page_number = 0
+    total_issues = repo_issues.totalCount
+    commit_date = ""
+    issue_no = 0
+    repo_issue_list = []
+
+    while total_issues > 0:
+        repo_issues_page = repo_issues.get_page(page_number)
+        for issue_obj in repo_issues_page:
+            # issue = dict()
+            issue = {}
+            issue_no += 1
+            issue_id = issue_obj.id
+            issue_title = issue_obj.title
+            issue_state = issue_obj.state
+            issue_number = issue_obj.number
+            issue_milestone = issue_obj.milestone
+            issue_body = issue_obj.body
+            issue_user_name = getattr(getattr(issue_obj, 'user'), 'name', '')
+            issue_user_login = getattr(getattr(issue_obj, 'user'), 'login', '')
+            issue_comment_count = issue_obj.comments 
+            issue_created_at = issue_obj.created_at
+
+            issue['issue_no'] = issue_no
+            issue['issue_id'] = issue_id
+            issue['issue_title'] = issue_title
+            issue['issue_state'] = issue_state
+            issue['issue_number'] = issue_number
+            issue['issue_milestone'] = issue_milestone
+            issue['issue_body'] = issue_body
+            issue['issue_user_name'] = issue_user_name
+            issue['issue_user_login'] = issue_user_login
+            issue['issue_comment_count'] = issue_comment_count
+            issue['issue_created_at'] = str(issue_created_at)
+            repo_issue_list.append(issue)
+            # print("================")
+            # print("ID: {}, {}, {}".format(issue_id, issue_title, issue_state))
+            # print("No: {}, {}, {}".format(issue_number, issue_milestone, issue_body))
+            # print("User: {}, {}, {}, {}".format(issue_user_name, issue_user_login, issue_comment_count, issue_created_at))
+            # print("******************")
+            print("issue_id:{}, issue_number:{}, issue_created_at:{}".format(issue_id, issue_number, issue_created_at))
+            total_issues -= 1
+        page_number += 1
+    
+    # repo_issue_list = [total_issues]
+    response_data = dict()
+    response_data['repo_issues'] = repo_issue_list
+    response_data['project_name'] = project_name
+    response_data['repo_name'] = repo_name
+    response_data['number_of_issues'] = len(repo_issue_list)
+    print("created response, sending back")
+
+    return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
 
 
 ####### Helper Methods #######
