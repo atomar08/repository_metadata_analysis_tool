@@ -35,7 +35,7 @@ cd repository_metadata_analysis_tool
 
 celery -A VCM worker -l info
 
-Another terminal:
+To run python django server:
 
 source gitVenv/bin/activate
 

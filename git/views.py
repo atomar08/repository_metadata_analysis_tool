@@ -26,7 +26,7 @@ NEW_REPO_INITIAL_SLEEP_DURATION = 7
 # r4 = g.get_repo("notepad-plus-plus/notepad-plus-plus")  # 2998
 # r4 = g.get_repo("apache/spark")  # 24165 commits
 # r4 = g.get_repo("atomar08/cs537")  # 34 commits
-
+#https://github.com/cake-build/example
 
 # test method to test any new functionality
 def test(request):
@@ -35,7 +35,7 @@ def test(request):
     project_name = request.GET.get('project_name')
 
     repo = g.get_repo("{}/{}".format(project_name, repo_name))
-    commits = repo.get_issues()
+    commits = repo.get_pulls()
 
     page_number = 0
     total_commits = commits.totalCount
@@ -46,23 +46,32 @@ def test(request):
         commits_page = commits.get_page(page_number)
         for commit_obj in commits_page:
             commit_no += 1
-            # print("commit_obj: {}, type: {}".format(commit_obj, type(commit_obj)))
-            # id = commit_obj.id
-            # title = commit_obj.title
-            # state = commit_obj.state
-            # number = commit_obj.number
-            # milestone = commit_obj.milestone
-            # body = commit_obj.body
-            # print("title: {}, {}, {}, {}, {}, {}".format(id, title, state, number, milestone, body))
-            # comments_count = commit_obj.comments 
-            # created_at = commit_obj.created_at
+            print("==========================")
+            print("PO: {}, {}".format(commit_obj, type(commit_obj)))
+            print("Title: {}".format(commit_obj.title))
+            print("Number: {}".format(commit_obj.number))
+            print("Additions: {}".format(commit_obj.additions))
+            # print("Assignee login: {}".format(getattr(getattr(commit_obj, 'assignee'), 'login', '')))
+            # print("Assignee name: {}".format(getattr(getattr(commit_obj, 'assignee'), 'name', '')))
+            print("Body: {}".format(commit_obj.body))
+            print("Number of changed files: {}".format(commit_obj.changed_files))
+            print("Created at: {}".format(commit_obj.created_at))
+            print("Number of deletion: {}".format(commit_obj.deletions))
+            print("ID: {}".format(commit_obj.id))
+            print("Merge commit sha: {}".format(commit_obj.merge_commit_sha))
+            print("Is mergable: {}".format(commit_obj.mergeable))
+            print("Merge state: {}".format(commit_obj.mergeable_state))
+            print("State: {}".format(commit_obj.state))
             # user_login = getattr(getattr(commit_obj, 'user'), 'login', '')
             # user_name = getattr(getattr(commit_obj, 'user'), 'name', '')
+            print("*****************************")
+            
+            # print(": {}".format())
 
             total_commits -= 1
         page_number += 1
     
-    metadata_list = [total_commits]
+    metadata_list = [commits.totalCount]
     response_data = dict()
     response_data['metadata'] = metadata_list
     response_data['project_name'] = project_name
@@ -200,7 +209,6 @@ def get_repo_issues(request):
 
     page_number = 0
     total_issues = repo_issues.totalCount
-    commit_date = ""
     issue_no = 0
     repo_issue_list = []
 
@@ -242,12 +250,56 @@ def get_repo_issues(request):
             total_issues -= 1
         page_number += 1
     
-    # repo_issue_list = [total_issues]
     response_data = dict()
     response_data['repo_issues'] = repo_issue_list
     response_data['project_name'] = project_name
     response_data['repo_name'] = repo_name
     response_data['number_of_issues'] = len(repo_issue_list)
+    print("created response, sending back")
+
+    return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
+
+
+def get_repo_pull_requests(request):
+    print("in get repo pull request method")
+    repo_name = request.GET.get('repo_name')
+    project_name = request.GET.get('project_name')
+
+    repo = g.get_repo("{}/{}".format(project_name, repo_name))
+    pull_request = repo.get_pulls()
+
+    page_number = 0
+    total_pull_requests = pull_request.totalCount
+    pull_request_no = 0
+    repo_pull_request_list = []
+
+    while total_pull_requests > 0:
+        pull_request_page = pull_request.get_page(page_number)
+        for pull_request_obj in pull_request_page:
+            pull_request = dict()
+            pull_request_no += 1
+            pull_request['pr_id'] = pull_request_obj.id
+            pull_request['pr_title'] = pull_request_obj.title
+            pull_request['pr_number'] = pull_request_obj.number
+            pull_request['pr_created_at'] = str(pull_request_obj.created_at)
+            pull_request['pr_merge_commit_sha'] = pull_request_obj.merge_commit_sha
+            pull_request['pr_no_of_changed_files'] = pull_request_obj.changed_files
+            pull_request['pr_no_of_deletion'] = pull_request_obj.deletions
+            pull_request['pr_additions'] = pull_request_obj.additions
+            pull_request['pr_is_mergeable'] = pull_request_obj.mergeable
+            pull_request['pr_mergeable_state'] = pull_request_obj.mergeable_state
+            pull_request['pr_state'] = pull_request_obj.state
+            pull_request['pr_body'] = pull_request_obj.body
+
+            repo_pull_request_list.append(pull_request)
+            total_pull_requests -= 1
+        page_number += 1
+    
+    response_data = dict()
+    response_data['metadata'] = repo_pull_request_list
+    response_data['project_name'] = project_name
+    response_data['repo_name'] = repo_name
+    response_data['number_of_pull_request'] = len(repo_pull_request_list)
     print("created response, sending back")
 
     return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
