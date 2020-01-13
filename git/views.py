@@ -296,7 +296,7 @@ def get_repo_pull_requests(request):
         page_number += 1
     
     response_data = dict()
-    response_data['metadata'] = repo_pull_request_list
+    response_data['pull_request_metadata'] = repo_pull_request_list
     response_data['project_name'] = project_name
     response_data['repo_name'] = repo_name
     response_data['number_of_pull_request'] = len(repo_pull_request_list)
