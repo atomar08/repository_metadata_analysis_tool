@@ -51,32 +51,45 @@ Sample Http Calls:
 
 1. Validate Repo
 http://127.0.0.1:8000/git/validate_repository?repo_name=cs537&project_name=atomar08
-Repo: cs537
-Project: atomar08
+
+    Repo: cs537
+
+    Project: atomar08
 
 
 2. Search
 http://localhost:8000/git/get_commits_id?repo_name=cs537&project_name=atomar08&commit_id=18e7c7cf000ecd7182f30ac645258fffcc2ed993
-Repo: cs537
-Project: atomar08
-Commit Id: 18e7c7cf000ecd7182f30ac645258fffcc2ed993
+
+    Repo: cs537
+    
+    Project: atomar08
+    
+    Commit Id: 18e7c7cf000ecd7182f30ac645258fffcc2ed993
 
 
 3. Pull Request:
 http://localhost:8000/git/get_repo_pull_requests?project_name=githubtraining&repo_name=hellogitworld
-Repo: hellogitworld
-Project: githubtraining
+    
+    Repo: hellogitworld
+    
+    Project: githubtraining
 
 
 4. Issues:
 http://localhost:8000/git/get_repo_issues?project_name=JasonEtco&repo_name=todo
-Repo: todo
-Project: JasonEtco
+
+    Repo: todo
+    
+    Project: JasonEtco
 
 
 5. Commits:
 http://localhost:8000/git/get_commits_page?repo_name=notepad-plus-plus&project_name=notepad-plus-plus&records_per_page=5&page_number=2
-Repo: notepad-plus-plus
-Project: notepad-plus-plus
-Records per page: 5
-page_number: 2
+
+    Repo: notepad-plus-plus
+    
+    Project: notepad-plus-plus
+    
+    Records per page: 5
+    
+    page_number: 2
