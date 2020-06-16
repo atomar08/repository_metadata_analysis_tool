@@ -5,27 +5,47 @@ python manage.py runserver
 ## Installation ##
 pip install --upgrade pip
 
-pip install django
 
-pip install django-cors-headers
+djongo doc: 
+https://nesdis.github.io/djongo/get-started/
 
-pip install djangorestframework
 
-djongo doc: https://nesdis.github.io/djongo/get-started/
-pip install djongo
+PyGithub doc: i
+https://github.com/PyGithub/PyGithub
 
-PyGithub doc: https://github.com/PyGithub/PyGithub
-pip install PyGithub
 
 brew update
 brew install mongodb
 brew services start mongodb
 
+
 Celery Implementation:
-pip install Celery
+https://www.rabbitmq.com/install-debian.html#apt
+https://tecadmin.net/install-rabbitmq-server-on-ubuntu/
+
 
 RabbitMQ:
 Install RabbitMQ
+sudo apt-get update
+sudo apt-get upgrade
+echo 'deb http://www.rabbitmq.com/debian/ testing main' | sudo tee /etc/apt/sources.list.d/rabbitmq.list
+wget -O- https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | sudo apt-key add -
+sudo apt-get install rabbitmq-server
+
+
+Using Init –
+sudo update-rc.d rabbitmq-server defaults
+sudo service rabbitmq-server start
+sudo service rabbitmq-server stop
+
+
+Uisng Systemctl –
+sudo systemctl enable rabbitmq-server
+
+sudo systemctl start rabbitmq-server
+
+sudo systemctl stop rabbitmq-server
+
 
 Use Celery:
 
@@ -35,6 +55,7 @@ cd repository_metadata_analysis_tool
 
 celery -A VCM worker -l info
 
+
 To run python django server:
 
 source gitVenv/bin/activate
@@ -43,7 +64,7 @@ cd repository_metadata_analysis_tool
 
 source env.sh
 
-python manage.py runserver 8001
+python manage.py runserver 8000
 
 
 Sample Http Calls:
