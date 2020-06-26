@@ -115,7 +115,7 @@ def get_commits(request):
     """
     project_name = request.GET.get('project_name')
     repo_name = request.GET.get('repo_name')
-    print("received request to collect logs of {} repo under {} project".format(repo_name, project_name))
+    # print("received request to collect logs of {} repo under {} project".format(repo_name, project_name))
 
     if not is_repo_valid(project_name, repo_name):
         return HttpResponse("Invalid repository", status=404)
@@ -130,7 +130,7 @@ def get_commits(request):
     response_data['project_name'] = project_name
     response_data['repo_name'] = repo_name
     response_data['number_commits'] = len(repo_metadata_list)
-    print("created response, sending back")
+    # print("created response, sending back")
     return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
 
 
@@ -149,7 +149,7 @@ def get_commits_page(request):
     repo_name = request.GET.get('repo_name')
     page_number = request.GET.get('page_number')
     records_per_page = request.GET.get('records_per_page', NUMBER_OF_RECORDS_PER_PAGE)
-    print("received request to collect logs of {} repo under {} project".format(repo_name, project_name))
+    # print("received request to collect logs of {} repo under {} project".format(repo_name, project_name))
 
     if not is_repo_valid(project_name, repo_name):
         return HttpResponse("Invalid repository", status=404)
@@ -174,8 +174,8 @@ def read_commits_page(request):
     repo_name = request.GET.get('repo_name')
     page_number = request.GET.get('page_number', 1)
     records_per_page = request.GET.get('records_per_page', NUMBER_OF_RECORDS_PER_PAGE)
-    print("received request to collect logs from project {}, repo {}, page number: {}, records/page: {}".format(
-        project_name, repo_name, page_number, records_per_page))
+    # print("received request to collect logs from project {}, repo {}, page number: {}, records/page: {}".format(
+    #     project_name, repo_name, page_number, records_per_page))
 
     if not is_repo_valid(project_name, repo_name):
         return HttpResponse("Invalid repository", status=404)
@@ -189,18 +189,18 @@ def read_commits_page(request):
 
 
 def get_commits_id(request):
-    print("in read repo  page")
+    # print("in read repo  page")
     repo_name = request.GET.get('repo_name')
     project_name = request.GET.get('project_name')
     commit_id=request.GET.get('commit_id')
     collect_data1 = collect_data(project_name, repo_name, commit_id)
-    print("received cid", type(collect_data1))
+    # print("received cid", type(collect_data1))
     return  collect_data1 
     # return read_repo_metadata_page(project_name, repo_name, page_number, records_per_page)
 
 
 def get_repo_issues(request):
-    print("in get_repo_issues method")
+    # print("in get_repo_issues method")
     repo_name = request.GET.get('repo_name')
     project_name = request.GET.get('project_name')
 
@@ -246,7 +246,7 @@ def get_repo_issues(request):
             # print("No: {}, {}, {}".format(issue_number, issue_milestone, issue_body))
             # print("User: {}, {}, {}, {}".format(issue_user_name, issue_user_login, issue_comment_count, issue_created_at))
             # print("******************")
-            print("issue_id:{}, issue_number:{}, issue_created_at:{}".format(issue_id, issue_number, issue_created_at))
+            # print("issue_id:{}, issue_number:{}, issue_created_at:{}".format(issue_id, issue_number, issue_created_at))
             total_issues -= 1
         page_number += 1
     
@@ -255,7 +255,7 @@ def get_repo_issues(request):
     response_data['project_name'] = project_name
     response_data['repo_name'] = repo_name
     response_data['number_of_issues'] = len(repo_issue_list)
-    print("created response, sending back")
+    # print("created response, sending back")
 
     return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
 
