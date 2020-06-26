@@ -264,17 +264,17 @@ def get_repo_pull_requests(request):
     print("in get repo pull request method")
     repo_name = request.GET.get('repo_name')
     project_name = request.GET.get('project_name')
-
+    
     repo = g.get_repo("{}/{}".format(project_name, repo_name))
-    pull_request = repo.get_pulls()
+    repo_pull_request = repo.get_pulls()
 
     page_number = 0
-    total_pull_requests = pull_request.totalCount
+    total_pull_requests = repo_pull_request.totalCount
     pull_request_no = 0
     repo_pull_request_list = []
 
     while total_pull_requests > 0:
-        pull_request_page = pull_request.get_page(page_number)
+        pull_request_page = repo_pull_request.get_page(page_number)
         for pull_request_obj in pull_request_page:
             pull_request = dict()
             pull_request_no += 1
@@ -292,7 +292,7 @@ def get_repo_pull_requests(request):
             pull_request['pr_body'] = pull_request_obj.body
 
             repo_pull_request_list.append(pull_request)
-            total_pull_requests -= 1
+            total_pull_requests -= 1       
         page_number += 1
     
     response_data = dict()
@@ -300,7 +300,6 @@ def get_repo_pull_requests(request):
     response_data['project_name'] = project_name
     response_data['repo_name'] = repo_name
     response_data['number_of_pull_request'] = len(repo_pull_request_list)
-    print("created response, sending back")
 
     return HttpResponse(json.dumps(response_data), content_type='application/json', status=200)
 
